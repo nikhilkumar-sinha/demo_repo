@@ -1,16 +1,20 @@
+# Root bundle metadata; update name if you fork this project.
 bundle:
   name: demo-repo
 
+# Workspace defaults used by all targets unless overridden.
 workspace:
   host: https://YOUR-WORKSPACE-URL
   root_path: /Workspace/Users/YOUR-USER/demo-repo
 
+# Reusable variables; keep catalogs/schemas DRY.
 variables:
   default_catalog:
     description: Default Unity Catalog catalog used by jobs and pipelines.
     default: main
 
 resources:
+  # Job resource: runs the hello notebook on an ephemeral cluster.
   jobs:
     hello_job:
       name: ${bundle.name} hello
@@ -26,6 +30,7 @@ resources:
           notebook_task:
             notebook_path: ./src/notebooks/hello.py
 
+  # Delta Live Tables pipeline resource with a placeholder notebook.
   pipelines:
     ingest_pipeline:
       name: ${bundle.name} ingest
@@ -38,6 +43,7 @@ resources:
           num_workers: 1
           spark_version: 14.3.x-scala2.12
 
+  # SQL Warehouse used by queries and dashboards.
   sql_warehouses:
     starter_wh:
       name: ${bundle.name} starter warehouse
@@ -45,6 +51,7 @@ resources:
       max_num_clusters: 1
       channel: CURRENT
 
+  # SQL query resource pointing to a file-based query definition.
   queries:
     data_freshness:
       display_name: ${bundle.name} data freshness
@@ -52,12 +59,14 @@ resources:
       warehouse_id: ${resources.sql_warehouses.starter_wh.id}
       query: ./src/sql/data_freshness.sql
 
+  # Dashboard resource referencing a file-based definition and warehouse.
   dashboards:
     ops_dashboard:
       display_name: ${bundle.name} operations overview
       warehouse_id: ${resources.sql_warehouses.starter_wh.id}
       definition_path: ./src/sql/dashboard.sql
 
+# Deployment targets; dev is default and inherits workspace settings.
 targets:
   dev:
     default: true
