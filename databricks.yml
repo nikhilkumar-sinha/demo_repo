@@ -5,6 +5,11 @@ workspace:
   host: https://YOUR-WORKSPACE-URL
   root_path: /Workspace/Users/YOUR-USER/demo-repo
 
+variables:
+  default_catalog:
+    description: Default Unity Catalog catalog used by jobs and pipelines.
+    default: main
+
 resources:
   jobs:
     hello_job:
@@ -20,6 +25,38 @@ resources:
           job_cluster_key: hello_cluster
           notebook_task:
             notebook_path: ./src/notebooks/hello.py
+
+  pipelines:
+    ingest_pipeline:
+      name: ${bundle.name} ingest
+      target: ${bundle.target}
+      catalog: ${var.default_catalog}
+      libraries:
+        - notebook: ./src/notebooks/ingest_pipeline.py
+      clusters:
+        - label: default
+          num_workers: 1
+          spark_version: 14.3.x-scala2.12
+
+  sql_warehouses:
+    starter_wh:
+      name: ${bundle.name} starter warehouse
+      cluster_size: Small
+      max_num_clusters: 1
+      channel: CURRENT
+
+  queries:
+    data_freshness:
+      display_name: ${bundle.name} data freshness
+      description: Checks recency of a demo table.
+      warehouse_id: ${resources.sql_warehouses.starter_wh.id}
+      query: ./src/sql/data_freshness.sql
+
+  dashboards:
+    ops_dashboard:
+      display_name: ${bundle.name} operations overview
+      warehouse_id: ${resources.sql_warehouses.starter_wh.id}
+      definition_path: ./src/sql/dashboard.sql
 
 targets:
   dev:
